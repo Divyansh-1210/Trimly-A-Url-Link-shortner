@@ -252,6 +252,9 @@ function renderTable(urls) {
       ? 'bg-primary/10 text-primary border-primary/20'
       : 'bg-surface-variant dark:bg-white/5 text-on-surface-variant dark:text-outline-variant border-outline-variant/20 dark:border-white/10';
     const truncated = u.long_url.length > 38 ? u.long_url.slice(0, 38) + '...' : u.long_url;
+    const summaryHtml = u.summary
+      ? `<span class="block text-[11px] italic text-on-surface-variant/60 dark:text-outline-variant/60 mt-0.5 truncate" title="${u.summary}">✨ ${u.summary}</span>`
+      : '';
     const ownerBadge = u.owner
       ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs border border-primary/20"><span class="material-symbols-outlined text-[12px]" style="font-variation-settings:'FILL' 1;">account_circle</span>${u.owner}</span>`
       : `<span class="text-on-surface-variant dark:text-outline-variant opacity-50 text-xs">guest</span>`;
@@ -261,7 +264,7 @@ function renderTable(urls) {
       <td class="py-4 px-6 text-primary dark:text-inverse-primary font-bold">
         <a href="${rowShortUrl}" target="_blank" class="hover:underline">/${u.short_code}</a>
       </td>
-      <td class="py-4 px-6 text-on-surface-variant dark:text-outline-variant w-[240px] max-w-[240px]" title="${u.long_url}"><span class="block truncate">${truncated}</span></td>
+      <td class="py-4 px-6 text-on-surface-variant dark:text-outline-variant w-[240px] max-w-[240px]" title="${u.long_url}"><span class="block truncate">${truncated}</span>${summaryHtml}</td>
       <td class="py-4 px-6">
         <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full border text-xs ${badgeCls}">
           <span class="material-symbols-outlined text-[14px]">visibility</span> ${u.click_count}
