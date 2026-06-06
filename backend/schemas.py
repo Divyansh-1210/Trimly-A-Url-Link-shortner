@@ -43,7 +43,8 @@ class URLResponse(BaseModel):
     short_url: str
     created_at: datetime
     click_count: int
-    owner: Optional[str] = None  # username of owner, if any
+    owner: Optional[str] = None      # username of owner, if any
+    summary: Optional[str] = None    # AI-generated summary
 
     class Config:
         from_attributes = True
@@ -56,6 +57,7 @@ class URLStats(BaseModel):
     click_count: int
     created_at: datetime
     owner: Optional[str] = None
+    summary: Optional[str] = None    # AI-generated summary
 
     class Config:
         from_attributes = True

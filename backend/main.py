@@ -14,11 +14,14 @@ from io import BytesIO
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import models, schemas, utils, auth
-from database import engine, get_db
+import models, schemas, utils, auth, ai
+from database import engine, get_db, run_migrations
 
 # Create all tables on startup
 models.Base.metadata.create_all(bind=engine)
+# Run migrations (adds new columns to existing DB safely)
+run_migrations()
+
 
 # Paths
 BASE_DIR     = Path(__file__).resolve().parent.parent
@@ -189,13 +192,21 @@ def shorten_url(
     db.commit()
     db.refresh(new_url)
 
+    # 🤖 Generate AI summary in background (non-blocking)
+    summary = ai.summarize_url(request.long_url)
+    if summary:
+        new_url.summary = summary
+        db.commit()
+        db.refresh(new_url)
+
     return schemas.URLResponse(
         short_code=new_url.short_code,
         long_url=new_url.long_url,
         short_url=f"{BASE_URL}/{new_url.short_code}",
         created_at=new_url.created_at,
         click_count=new_url.click_count,
-        owner=current_user.username if current_user else None
+        owner=current_user.username if current_user else None,
+        summary=new_url.summary
     )
 
 
@@ -212,10 +223,31 @@ def get_all_urls(db: Session = Depends(get_db)):
             short_url=f"{BASE_URL}/{u.short_code}",
             click_count=u.click_count,
             created_at=u.created_at,
-            owner=u.owner.username if u.owner else None
+            owner=u.owner.username if u.owner else None,
+            summary=u.summary
         )
         for u in urls
     ]
+
+
+# ------------------------------------------------------------------
+# GET /summarize/{short_code} — Re-generate AI summary
+# ------------------------------------------------------------------
+@app.get("/summarize/{short_code}")
+def regenerate_summary(short_code: str, db: Session = Depends(get_db)):
+    """Trigger AI to (re)generate a summary for an existing short URL"""
+    url_entry = db.query(models.URL).filter(models.URL.short_code == short_code).first()
+    if not url_entry:
+        raise HTTPException(status_code=404, detail=f"Short URL '{short_code}' not found.")
+
+    summary = ai.summarize_url(url_entry.long_url)
+    if summary:
+        url_entry.summary = summary
+        db.commit()
+        db.refresh(url_entry)
+        return {"short_code": short_code, "summary": summary, "status": "generated"}
+    else:
+        return {"short_code": short_code, "summary": None, "status": "unavailable — set GEMINI_API_KEY"}
 
 
 # ------------------------------------------------------------------
@@ -240,7 +272,8 @@ def get_my_urls(
             short_url=f"{BASE_URL}/{u.short_code}",
             click_count=u.click_count,
             created_at=u.created_at,
-            owner=current_user.username
+            owner=current_user.username,
+            summary=u.summary
         )
         for u in urls
     ]
@@ -260,7 +293,8 @@ def get_stats(short_code: str, db: Session = Depends(get_db)):
         short_url=f"{BASE_URL}/{url_entry.short_code}",
         click_count=url_entry.click_count,
         created_at=url_entry.created_at,
-        owner=url_entry.owner.username if url_entry.owner else None
+        owner=url_entry.owner.username if url_entry.owner else None,
+        summary=url_entry.summary
     )
 
 

@@ -9,3 +9,4 @@ passlib[bcrypt]
 qrcode[pil]
 pillow
 httpx
+google-genai

@@ -26,9 +26,11 @@ class URL(Base):
     id = Column(Integer, primary_key=True, index=True)
     short_code = Column(String(20), unique=True, index=True, nullable=False)
     long_url = Column(String(2048), nullable=False)
+    summary = Column(String(500), nullable=True)   # AI-generated summary
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     click_count = Column(Integer, default=0)
 
     # Optional — links can belong to a user OR be anonymous
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     owner = relationship("User", back_populates="urls")
+
