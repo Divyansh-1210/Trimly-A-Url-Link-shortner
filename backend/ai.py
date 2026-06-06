@@ -4,37 +4,48 @@ from google import genai
 
 logger = logging.getLogger(__name__)
 
-# Configure Gemini with API key from environment variable
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+
+# Try models in order — if one fails, fallback to next
+MODELS = [
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-flash-latest",
+]
 
 
 def summarize_url(url: str) -> str:
     """
     Use Google Gemini AI to generate a one-line summary of what a URL is about.
-    Returns None if AI is unavailable or API key is not set.
+    Tries multiple models in order — falls back automatically if one is unavailable.
+    Returns None if all models fail or API key is not set.
     """
     if not GEMINI_API_KEY:
         logger.warning("GEMINI_API_KEY not set. Skipping AI summary.")
         return None
 
-    try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
-        prompt = (
-            f"In exactly one short sentence (max 15 words), describe what this URL is about. "
-            f"Be specific and informative. Do not include the URL itself in your answer.\n\n"
-            f"URL: {url}"
-        )
+    prompt = (
+        f"In exactly one short sentence (max 15 words), describe what this URL is about. "
+        f"Be specific and informative. Do not include the URL itself in your answer.\n\n"
+        f"URL: {url}"
+    )
 
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=prompt
-        )
+    for model in MODELS:
+        try:
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt
+            )
+            summary = response.text.strip().strip('"').strip("'")
+            logger.info(f"AI summary generated using {model}: {summary}")
+            return summary
 
-        summary = response.text.strip().strip('"').strip("'")
-        logger.info(f"AI summary generated for {url}: {summary}")
-        return summary
+        except Exception as e:
+            logger.warning(f"Model {model} failed: {type(e).__name__}: {e}. Trying next...")
+            continue
 
-    except Exception as e:
-        logger.error(f"Gemini AI summarization failed: {type(e).__name__}: {e}")
-        return None
+    logger.error("All Gemini models failed. Returning None.")
+    return None

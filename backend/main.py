@@ -174,13 +174,22 @@ def shorten_url(
 
     existing_url = query.first()
     if existing_url:
+        # Generate summary if it was missing (older records before AI was added)
+        if not existing_url.summary:
+            summary = ai.summarize_url(existing_url.long_url)
+            if summary:
+                existing_url.summary = summary
+                db.commit()
+                db.refresh(existing_url)
+
         return schemas.URLResponse(
             short_code=existing_url.short_code,
             long_url=existing_url.long_url,
             short_url=f"{BASE_URL}/{existing_url.short_code}",
             created_at=existing_url.created_at,
             click_count=existing_url.click_count,
-            owner=existing_url.owner.username if existing_url.owner else None
+            owner=existing_url.owner.username if existing_url.owner else None,
+            summary=existing_url.summary
         )
 
     new_url = models.URL(
