@@ -289,7 +289,7 @@ function renderStats(urls) {
   const top    = urls.reduce((best, u) => u.click_count > (best?.click_count ?? -1) ? u : best, null);
   document.getElementById('statTotal').textContent  = urls.length;
   document.getElementById('statClicks').textContent = clicks;
-  document.getElementById('statTop').textContent    = top && top.click_count > 0 ? top.click_count : 'ΓÇö';
+  document.getElementById('statTop').textContent    = top && top.click_count > 0 ? top.click_count : '\u2014';
 }
 
 // ΓöÇΓöÇ Chart.js ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
